@@ -138,8 +138,8 @@ export default function SuccessPage() {
         {TEST_MODE && (
           <div className="mb-8 border-2 border-yellow-500 bg-yellow-500/10 px-6 py-4 text-left">
             <p className="text-sm text-yellow-500">
-              <strong>TEST MODE:</strong> This was a test order. No Printful order was
-              created, and no item will be shipped.
+              <strong>TEST MODE:</strong> This was a test order ($0.05). A draft order was
+              created in Printful but will not ship until manually confirmed in the Printful dashboard.
             </p>
           </div>
         )}
