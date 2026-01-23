@@ -5,6 +5,9 @@ import { useCheckout } from "@moneydevkit/nextjs";
 import { NormalizedVariant } from "@/types/printful";
 import { ShippingAddress } from "@/types/order";
 
+const TEST_MODE = process.env.NEXT_PUBLIC_TEST_MODE === "true";
+const TEST_PRICE_CENTS = 5; // $0.05
+
 interface CheckoutButtonProps {
   variant: NormalizedVariant;
   productName: string;
@@ -21,6 +24,8 @@ export default function CheckoutButton({
   const { createCheckout, isLoading } = useCheckout();
   const [error, setError] = useState<string | null>(null);
 
+  const checkoutPrice = TEST_MODE ? TEST_PRICE_CENTS : variant.price;
+
   const handleCheckout = async () => {
     setError(null);
 
@@ -31,16 +36,18 @@ export default function CheckoutButton({
 
     const result = await createCheckout({
       type: "AMOUNT",
-      title: productName,
+      title: TEST_MODE ? `[TEST] ${productName}` : productName,
       description: `${variant.name} - ${variant.options.size || ""} ${variant.options.color || ""}`.trim(),
-      amount: variant.price,
+      amount: checkoutPrice,
       currency: "USD",
       successUrl: "/success",
       metadata: {
+        testMode: TEST_MODE ? "true" : "false",
         variantId: String(variant.id),
         variantName: variant.name,
         productName: productName,
-        price: String(variant.price),
+        originalPrice: String(variant.price),
+        price: String(checkoutPrice),
         currency: variant.currency,
         shippingName: shipping.name,
         shippingEmail: shipping.email,
@@ -76,6 +83,13 @@ export default function CheckoutButton({
 
   return (
     <div className="space-y-4">
+      {TEST_MODE && (
+        <div className="border-2 border-yellow-500 bg-yellow-500/10 px-4 py-3 text-sm text-yellow-500">
+          <strong>TEST MODE:</strong> Checkout is $0.05. Printful orders require
+          manual approval.
+        </div>
+      )}
+
       {error && (
         <div className="border-2 border-red-500 bg-red-500/10 px-4 py-3 text-sm text-red-500">
           {error}
@@ -108,7 +122,12 @@ export default function CheckoutButton({
             Processing...
           </span>
         ) : (
-          `Pay ${formatPrice(variant.price)} with Lightning`
+          <>
+            Pay {formatPrice(checkoutPrice)} with Lightning
+            {TEST_MODE && (
+              <span className="ml-2 text-xs">(was {formatPrice(variant.price)})</span>
+            )}
+          </>
         )}
       </button>
 

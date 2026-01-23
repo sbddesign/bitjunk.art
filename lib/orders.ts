@@ -2,6 +2,8 @@ import { supabase } from "./supabase";
 import { Order, CreateOrderRequest, OrderItem, ShippingAddress } from "@/types/order";
 import { printfulClient } from "./printful";
 
+const TEST_MODE = process.env.NEXT_PUBLIC_TEST_MODE === "true";
+
 interface DbOrder {
   id: string;
   user_id: string | null;
@@ -133,6 +135,15 @@ export async function fulfillOrder(orderId: string): Promise<Order | null> {
   const order = await getOrder(orderId);
   if (!order || order.status !== "pending") return null;
 
+  // In test mode, skip Printful entirely to avoid creating any orders
+  if (TEST_MODE) {
+    console.log("[TEST MODE] Skipping Printful order creation for:", orderId);
+    return updateOrder(orderId, {
+      printfulStatus: "draft (test mode)",
+      status: "processing",
+    });
+  }
+
   try {
     const printfulOrder = await printfulClient.createOrder({
       recipient: {
@@ -150,6 +161,7 @@ export async function fulfillOrder(orderId: string): Promise<Order | null> {
         sync_variant_id: item.variantId,
         quantity: item.quantity,
       })),
+      // confirm: false creates a draft order requiring manual approval in Printful dashboard
       confirm: false,
     });
 

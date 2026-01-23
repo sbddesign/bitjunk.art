@@ -6,6 +6,7 @@ import Link from "next/link";
 import { ShippingAddress } from "@/types/order";
 
 const STORAGE_KEY = "bitjunk_shipping";
+const TEST_MODE = process.env.NEXT_PUBLIC_TEST_MODE === "true";
 
 interface OrderResult {
   id: string;
@@ -133,6 +134,15 @@ export default function SuccessPage() {
         <p className="mb-8 text-lg text-zinc-400">
           Thanks for your order. Your item will be printed and shipped soon.
         </p>
+
+        {TEST_MODE && (
+          <div className="mb-8 border-2 border-yellow-500 bg-yellow-500/10 px-6 py-4 text-left">
+            <p className="text-sm text-yellow-500">
+              <strong>TEST MODE:</strong> This was a test order. No Printful order was
+              created, and no item will be shipped.
+            </p>
+          </div>
+        )}
 
         {orderError && (
           <div className="mb-8 border-2 border-red-500/50 bg-red-500/10 px-6 py-4 text-left">
