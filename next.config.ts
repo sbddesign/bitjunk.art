@@ -1,7 +1,14 @@
-import type { NextConfig } from "next";
+import withMdkCheckout from "@moneydevkit/nextjs/next-plugin";
 
-const nextConfig: NextConfig = {
-  /* config options here */
+const nextConfig = {
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https" as const,
+        hostname: "files.cdn.printful.com",
+      },
+    ],
+  },
 };
 
-export default nextConfig;
+export default withMdkCheckout(nextConfig);
