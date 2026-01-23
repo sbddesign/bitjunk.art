@@ -135,16 +135,11 @@ export async function fulfillOrder(orderId: string): Promise<Order | null> {
   const order = await getOrder(orderId);
   if (!order || order.status !== "pending") return null;
 
-  // In test mode, skip Printful entirely to avoid creating any orders
-  if (TEST_MODE) {
-    console.log("[TEST MODE] Skipping Printful order creation for:", orderId);
-    return updateOrder(orderId, {
-      printfulStatus: "draft (test mode)",
-      status: "processing",
-    });
-  }
-
   try {
+    if (TEST_MODE) {
+      console.log("[TEST MODE] Creating draft Printful order for:", orderId);
+    }
+
     const printfulOrder = await printfulClient.createOrder({
       recipient: {
         name: order.shipping.name,
@@ -162,12 +157,13 @@ export async function fulfillOrder(orderId: string): Promise<Order | null> {
         quantity: item.quantity,
       })),
       // confirm: false creates a draft order requiring manual approval in Printful dashboard
+      // In both test and production mode, orders are created as drafts for safety
       confirm: false,
     });
 
     return updateOrder(orderId, {
       printfulOrderId: printfulOrder.id,
-      printfulStatus: printfulOrder.status,
+      printfulStatus: TEST_MODE ? `draft (test mode)` : printfulOrder.status,
       status: "processing",
     });
   } catch (error) {
