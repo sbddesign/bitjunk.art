@@ -117,16 +117,15 @@ export function normalizeVariant(
   let color = colorOption?.value;
 
   if (!size || !color) {
-    // Try to extract from variant name - common format: "Product - Size / Color"
-    const nameParts = variant.name.split(" - ");
-    if (nameParts.length > 1) {
-      const optionPart = nameParts[nameParts.length - 1];
-      const options = optionPart.split(" / ").map(s => s.trim());
+    // Common sizes to detect (abbreviations and full names)
+    const sizePatterns = /^(XXS|XS|S|M|L|XL|XXL|2XL|3XL|4XL|5XL|Small|Medium|Large|X-?Large|XX-?Large|2X-?Large|3X-?Large|4X-?Large|5X-?Large|\d+)$/i;
 
-      // Common sizes to detect (abbreviations and full names)
-      const sizePatterns = /^(XXS|XS|S|M|L|XL|XXL|2XL|3XL|4XL|5XL|Small|Medium|Large|X-?Large|XX-?Large|2X-?Large|3X-?Large|4X-?Large|5X-?Large|\d+)$/i;
-
-      for (const opt of options) {
+    // Try format: "Product Name / Size" or "Product Name / Size / Color"
+    const slashParts = variant.name.split(" / ");
+    if (slashParts.length >= 2) {
+      // Last parts are likely the options
+      for (let i = 1; i < slashParts.length; i++) {
+        const opt = slashParts[i].trim();
         if (!size && sizePatterns.test(opt)) {
           size = opt;
         } else if (!color && !sizePatterns.test(opt)) {
@@ -134,17 +133,21 @@ export function normalizeVariant(
         }
       }
     }
-  }
 
-  // If still no size but we have options that look like sizes, use first option as size
-  // This handles single-option products (size only, no color)
-  if (!size && !color) {
-    const nameParts = variant.name.split(" - ");
-    if (nameParts.length > 1) {
-      const optionPart = nameParts[nameParts.length - 1].trim();
-      // If there's no " / " separator, it's likely just a size
-      if (!optionPart.includes(" / ")) {
-        size = optionPart;
+    // Also try format: "Product - Size / Color"
+    if (!size && !color) {
+      const dashParts = variant.name.split(" - ");
+      if (dashParts.length > 1) {
+        const optionPart = dashParts[dashParts.length - 1];
+        const options = optionPart.split(" / ").map(s => s.trim());
+
+        for (const opt of options) {
+          if (!size && sizePatterns.test(opt)) {
+            size = opt;
+          } else if (!color && !sizePatterns.test(opt)) {
+            color = opt;
+          }
+        }
       }
     }
   }
