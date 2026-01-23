@@ -104,8 +104,37 @@ export function normalizeProductWithVariants(
 export function normalizeVariant(
   variant: PrintfulSyncProductWithVariants["sync_variants"][0]
 ): NormalizedVariant {
-  const sizeOption = variant.options.find((o) => o.id === "size");
-  const colorOption = variant.options.find((o) => o.id === "color");
+  // Look for size/color options (case-insensitive)
+  const sizeOption = variant.options.find((o) =>
+    o.id.toLowerCase() === "size" || o.id.toLowerCase().includes("size")
+  );
+  const colorOption = variant.options.find((o) =>
+    o.id.toLowerCase() === "color" || o.id.toLowerCase().includes("color")
+  );
+
+  // Fallback: parse size from variant name (e.g., "Product Name - S / Black")
+  let size = sizeOption?.value;
+  let color = colorOption?.value;
+
+  if (!size || !color) {
+    // Try to extract from variant name - common format: "Product - Size / Color"
+    const nameParts = variant.name.split(" - ");
+    if (nameParts.length > 1) {
+      const optionPart = nameParts[nameParts.length - 1];
+      const options = optionPart.split(" / ").map(s => s.trim());
+
+      // Common sizes to detect
+      const sizePatterns = /^(XXS|XS|S|M|L|XL|2XL|3XL|4XL|5XL|\d+)$/i;
+
+      for (const opt of options) {
+        if (!size && sizePatterns.test(opt)) {
+          size = opt.toUpperCase();
+        } else if (!color && !sizePatterns.test(opt)) {
+          color = opt;
+        }
+      }
+    }
+  }
 
   const imageUrl =
     variant.files.find((f) => f.type === "preview")?.preview_url ||
@@ -120,8 +149,8 @@ export function normalizeVariant(
     sku: variant.sku,
     imageUrl,
     options: {
-      size: sizeOption?.value,
-      color: colorOption?.value,
+      size,
+      color,
     },
   };
 }

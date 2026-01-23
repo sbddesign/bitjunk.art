@@ -47,7 +47,7 @@ export default function ProductCard({ product }: ProductCardProps) {
           {product.name}
         </h3>
         <p className="text-lg font-black text-lime-400">
-          {product.priceRange.min > 0 ? priceDisplay : "Loading..."}
+          {product.priceRange.min > 0 ? priceDisplay : "View Price →"}
         </p>
         {product.variantCount > 1 && (
           <p className="text-xs text-zinc-500">
