@@ -1,4 +1,4 @@
-import { supabase } from "./supabase";
+import { getSupabase } from "./supabase";
 import { Order, CreateOrderRequest, OrderItem, ShippingAddress } from "@/types/order";
 import { printfulClient } from "./printful";
 
@@ -38,7 +38,7 @@ export async function createOrder(data: CreateOrderRequest): Promise<Order> {
     },
   ];
 
-  const { data: order, error } = await supabase
+  const { data: order, error } = await getSupabase()
     .from("orders")
     .insert({
       id: orderId,
@@ -64,7 +64,7 @@ export async function createOrder(data: CreateOrderRequest): Promise<Order> {
 }
 
 export async function getOrder(orderId: string): Promise<Order | null> {
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from("orders")
     .select()
     .eq("id", orderId)
@@ -89,7 +89,7 @@ export async function updateOrder(
   if (updates.printfulOrderId) updateData.printful_order_id = updates.printfulOrderId;
   if (updates.printfulStatus) updateData.printful_status = updates.printfulStatus;
 
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from("orders")
     .update(updateData)
     .eq("id", orderId)
@@ -104,7 +104,7 @@ export async function updateOrder(
 }
 
 export async function getUserOrders(userId: string): Promise<Order[]> {
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from("orders")
     .select()
     .eq("user_id", userId)
@@ -118,7 +118,7 @@ export async function getUserOrders(userId: string): Promise<Order[]> {
 }
 
 export async function getOrdersByEmail(email: string): Promise<Order[]> {
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from("orders")
     .select()
     .eq("user_email", email)
