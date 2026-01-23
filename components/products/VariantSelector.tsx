@@ -19,11 +19,15 @@ export default function VariantSelector({
   const selectedSize = selectedVariant?.options.size;
   const selectedColor = selectedVariant?.options.color;
 
+  // Only use color filter if we actually have colors to display
+  const hasColors = colors.length > 0;
+  const hasSizes = sizes.length > 0;
+
   const handleSizeChange = (size: string) => {
     const variant = variants.find(
       (v) =>
         v.options.size === size &&
-        (selectedColor ? v.options.color === selectedColor : true)
+        (!hasColors || !selectedColor || v.options.color === selectedColor)
     );
     if (variant) onSelect(variant);
   };
@@ -32,7 +36,7 @@ export default function VariantSelector({
     const variant = variants.find(
       (v) =>
         v.options.color === color &&
-        (selectedSize ? v.options.size === selectedSize : true)
+        (!hasSizes || !selectedSize || v.options.size === selectedSize)
     );
     if (variant) onSelect(variant);
   };
@@ -41,7 +45,7 @@ export default function VariantSelector({
     return variants.some(
       (v) =>
         (!size || v.options.size === size) &&
-        (!color || v.options.color === color)
+        (!hasColors || !color || v.options.color === color)
     );
   };
 
@@ -55,7 +59,7 @@ export default function VariantSelector({
           <div className="flex flex-wrap gap-2">
             {sizes.map((size) => {
               const isSelected = selectedSize === size;
-              const isAvailable = isVariantAvailable(size, selectedColor);
+              const isAvailable = isVariantAvailable(size, hasColors ? selectedColor : undefined);
 
               return (
                 <button
@@ -86,7 +90,7 @@ export default function VariantSelector({
           <div className="flex flex-wrap gap-2">
             {colors.map((color) => {
               const isSelected = selectedColor === color;
-              const isAvailable = isVariantAvailable(selectedSize, color);
+              const isAvailable = isVariantAvailable(hasSizes ? selectedSize : undefined, color);
 
               return (
                 <button
