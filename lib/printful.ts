@@ -104,49 +104,52 @@ export function normalizeProductWithVariants(
 export function normalizeVariant(
   variant: PrintfulSyncProductWithVariants["sync_variants"][0]
 ): NormalizedVariant {
-  // Look for size/color options (case-insensitive)
+  // Look for size/color options - use exact match only to avoid false positives
   const sizeOption = variant.options.find((o) =>
-    o.id.toLowerCase() === "size" || o.id.toLowerCase().includes("size")
+    o.id.toLowerCase() === "size"
   );
   const colorOption = variant.options.find((o) =>
-    o.id.toLowerCase() === "color" || o.id.toLowerCase().includes("color")
+    o.id.toLowerCase() === "color"
   );
 
-  // Fallback: parse size from variant name (e.g., "Product Name - S / Black")
   let size = sizeOption?.value;
   let color = colorOption?.value;
 
-  if (!size || !color) {
-    // Common sizes to detect (abbreviations and full names)
-    const sizePatterns = /^(XXS|XS|S|M|L|XL|XXL|2XL|3XL|4XL|5XL|Small|Medium|Large|X-?Large|XX-?Large|2X-?Large|3X-?Large|4X-?Large|5X-?Large|\d+)$/i;
+  // Common sizes to detect (abbreviations and full names)
+  const sizePatterns = /^(XXS|XS|S|M|L|XL|XXL|2XL|3XL|4XL|5XL|Small|Medium|Large|X-?Large|XX-?Large|2X-?Large|3X-?Large|4X-?Large|5X-?Large|\d+)$/i;
 
-    // Try format: "Product Name / Size" or "Product Name / Size / Color"
-    const slashParts = variant.name.split(" / ");
-    if (slashParts.length >= 2) {
-      // Last parts are likely the options
-      for (let i = 1; i < slashParts.length; i++) {
-        const opt = slashParts[i].trim();
-        if (!size && sizePatterns.test(opt)) {
-          size = opt;
-        } else if (!color && !sizePatterns.test(opt)) {
+  // Parse from variant name if needed
+  // Format: "Product Name / Size" or "Product Name / Size / Color"
+  const slashParts = variant.name.split(" / ");
+  if (slashParts.length >= 2) {
+    // Get option parts (everything after the first part which is the product name)
+    const optionParts = slashParts.slice(1).map(s => s.trim());
+
+    for (const opt of optionParts) {
+      if (!size && sizePatterns.test(opt)) {
+        size = opt;
+      } else if (!color && opt && !sizePatterns.test(opt)) {
+        // Only set color if there are multiple option parts (size + color)
+        // Don't treat single option as color
+        if (optionParts.length > 1) {
           color = opt;
         }
       }
     }
+  }
 
-    // Also try format: "Product - Size / Color"
-    if (!size && !color) {
-      const dashParts = variant.name.split(" - ");
-      if (dashParts.length > 1) {
-        const optionPart = dashParts[dashParts.length - 1];
-        const options = optionPart.split(" / ").map(s => s.trim());
+  // Also try format: "Product - Size / Color"
+  if (!size) {
+    const dashParts = variant.name.split(" - ");
+    if (dashParts.length > 1) {
+      const optionPart = dashParts[dashParts.length - 1];
+      const options = optionPart.split(" / ").map(s => s.trim());
 
-        for (const opt of options) {
-          if (!size && sizePatterns.test(opt)) {
-            size = opt;
-          } else if (!color && !sizePatterns.test(opt)) {
-            color = opt;
-          }
+      for (const opt of options) {
+        if (!size && sizePatterns.test(opt)) {
+          size = opt;
+        } else if (!color && opt && !sizePatterns.test(opt) && options.length > 1) {
+          color = opt;
         }
       }
     }
